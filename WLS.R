@@ -4,21 +4,26 @@ N = 2000
 P = 500
 X = matrix(rnorm(N*P), nrow=N)
 y = matrix(rnorm(N), nrow=N)
-W = diag(1, N, N)
-
+weights = rnorm(N)^2
+W = diag(weights, N);
 
 inversionMethod <- function(X, y, W) {
   return(solve(t(X)%*%W%*%X)%*%t(X)%*%W%*%y)
 }
 
 myMethod <- function(X, y, W) {
+  # tXW = t(X) %*% W
+  # don't waste time multiplying by a bunch of zeros
+  tXW = t(X * weights)
+  
+  # cholesky decomposition
   # L'L = X'WX
   # L is upper right triangular
   # L' is lower left triangular
-  L = chol(t(X) %*% W %*% X)
+  L = chol(tXW %*% X)
   
   # L'b = X'Wy
-  b = forwardsolve(t(L), t(X) %*% W %*% y)
+  b = forwardsolve(t(L), tXW %*% y)
   
   # L*beta = b
   beta = backsolve(L, b)
@@ -29,6 +34,5 @@ myMethod <- function(X, y, W) {
 microbenchmark(
   inversionMethod(X, y, W),
   myMethod(X, y, W),
-  times=10
+  times=5
 )
-
