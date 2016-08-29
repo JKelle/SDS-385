@@ -1,9 +1,13 @@
 library(microbenchmark)
+library('Matrix')
 
 N = 2000
 P = 500
-X = matrix(rnorm(N*P), nrow=N)
 y = matrix(rnorm(N), nrow=N)
+X = matrix(rnorm(N*P), nrow=N)
+mask = matrix(rbinom(N*P,1,0.05), nrow=N)
+X = mask*X
+Xsparse = Matrix(X, sparse=TRUE)
 weights = rnorm(N)^2
 W = diag(weights, N);
 
@@ -11,7 +15,7 @@ inversionMethod <- function(X, y, W) {
   return(solve(t(X)%*%W%*%X)%*%t(X)%*%W%*%y)
 }
 
-myMethod <- function(X, y, W) {
+myMethod <- function(X, y, weights) {
   # tXW = t(X) %*% W
   # don't waste time multiplying by a bunch of zeros
   tXW = t(X * weights)
@@ -33,6 +37,7 @@ myMethod <- function(X, y, W) {
 
 microbenchmark(
   inversionMethod(X, y, W),
-  myMethod(X, y, W),
-  times=5
+  myMethod(X, y, weights),
+  myMethod(Xsparse, y, weights),
+  times=1
 )
