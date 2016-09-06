@@ -3,9 +3,6 @@
 # import the WDBC dataset from
 #     https://github.com/jgscott/SDS385/blob/master/data/wdbc.csv
 
-library(microbenchmark)
-library('Matrix')
-
 # load y
 y = as.matrix(wdbc[2])
 y[y == "B"] <- 0
