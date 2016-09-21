@@ -7,15 +7,20 @@
 setwd("~/Google Drive/University of Texas/SDS 385; Statistical Models for Big Data/code")
 source("common.R")
 
-# Computes descent direction by Newton's method.
 computeNewtonDirection <- function(beta, y, X, m) {
+  # Computes descent direction by Newton's method.
+  #
+  # Args:
+  #   beta: the weight vector
+  #   y: the vector of labels
+  #   X: the feature matrix (each row is one data point)
+  #   m: the vector of number of trials for each data point
   hessian = computeHessian(beta, X, m)
   gradient = computeGradient(beta, y, X, m)
   direction = symmetricPosDefSolve(hessian, -gradient)
   return(direction)
 }
 
-# Newton's method
 newtonMethod <- function(y, X, m, max_iterations, convergence_threshold) {
   # Newton's method - TODO: explain newton's method
   # Step size is 1.
