@@ -18,6 +18,8 @@ library('Matrix')
 setwd("~/Google Drive/University of Texas/SDS 385; Statistical Models for Big Data/code")
 source("gradientDescent.R")
 source("newtonMethod.R")
+source("SGD.R")
+#source("quasiNewton.R")
 
 
 ##################
@@ -53,6 +55,15 @@ list[gd_beta, gd_likelihoods] = gradientDescent(y, X, m, 10000, 1e-6)
 
 # nm = newton method
 list[nm_beta, nm_likelihoods] = newtonMethod(y, X, m, 10000, 1e-6)
+
+# sgd = stochastic gradient descent
+sgd_beta = stochasticGradientDescent(y, X, m, 4000, 1e-6)
+
+# qn = quasi-newton
+#qn_beta = quasiNewtonMethod(y, X, m, 10000, 1e-6)
+
+#source("SGD.R")
+#stochasticGradientDescent(y, X, m, 4000, 1e-6)
 
 # glm = R's built-in glm (generalized linear model) function 
 glm1 = glm(y~X, family='binomial')

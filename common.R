@@ -57,7 +57,8 @@ computeGradient <- function(beta, y, X, m) {
   #   X: the feature matrix (each row is one data point)
   #   m: the vector of number of trials for each data point
   w = 1/(1 + exp(-(X %*% beta)))
-  return(t(X) %*% (m*w - y))
+  gradient = t(X) %*% (m*w - y)
+  return(gradient)
 }
 
 computeHessian <- function(beta, X, m) {
