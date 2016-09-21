@@ -1,5 +1,17 @@
+
+# Author: Josh Kelle
+
+# This script implements the closed form solution to weighted least squares.
+# It shows the difference in efficiency between the naive solution (explicitly
+# computing an inverse) versus solving the linear system via a decomposition.
+#
+# This script also experiments with sparse matrices.
+
 library(microbenchmark)
 library('Matrix')
+
+setwd("~/Google Drive/University of Texas/SDS 385; Statistical Models for Big Data/code")
+source("common.R")
 
 N = 2000
 P = 500
@@ -15,23 +27,12 @@ inversionMethod <- function(X, y, W) {
   return(solve(t(X)%*%W%*%X)%*%t(X)%*%W%*%y)
 }
 
+# solves X'WX * beta = X'Wy
 myMethod <- function(X, y, weights) {
-  # tXW = t(X) %*% W
-  # don't waste time multiplying by a bunch of zeros
-  tXW = t(X * weights)
-  
-  # cholesky decomposition
-  # L'L = X'WX
-  # L is upper right triangular
-  # L' is lower left triangular
-  L = chol(tXW %*% X)
-  
-  # L'b = X'Wy
-  b = forwardsolve(t(L), tXW %*% y)
-  
-  # L*beta = b
-  beta = backsolve(L, b)
-  
+  # X'WX -> (W^(1/2) X)'(W^(1/2) X)
+  A = crossprod(sqrt(weights) * X)
+  b = t(X * weights) %*% y
+  beta = symmetricPosDefSolve(A, b)
   return(beta)
 }
 
