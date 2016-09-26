@@ -8,7 +8,7 @@ setwd("~/Google Drive/University of Texas/SDS 385; Statistical Models for Big Da
 source("common.R")
 
 
-computeQuasiNewtonDirection <- function(gradient, hessian_approx) {
+computeQuasiNewtonDirection <- function(gradient, inv_hessian_approx) {
   # Computes descent direction by Newton's method.
   #
   # Args:
@@ -17,7 +17,7 @@ computeQuasiNewtonDirection <- function(gradient, hessian_approx) {
   #
   # Returns:
   #   direction: the quasi-Newton direction
-  direction = symmetricPosDefSolve(hessian_approx, -gradient)
+  direction = -(inv_hessian_approx %*% gradient)
   return(direction)
 }
 
@@ -51,7 +51,7 @@ quasiNewtonMethod <- function(y, X, m, max_iterations, convergence_threshold) {
   prev_nll = cur_nll + convergence_threshold + 1
   gradient = matrix(1, ncol(X), 1)  # all ones
   prev_beta = beta + 0.1
-  hessian_approx = computeHessian(beta, X, m)
+  inv_hessian_approx = solve(computeHessian(beta, X, m))
   
   print(paste("iteration #", i, "likelihood =", cur_nll))
   
@@ -61,10 +61,10 @@ quasiNewtonMethod <- function(y, X, m, max_iterations, convergence_threshold) {
     gradient = computeGradient(beta, y, X, m)
     beta_diff = beta - prev_beta
     gradient_diff = gradient - prev_gradient
-    hessian_approx = computeHessianApprox(hessian_approx, beta_diff, gradient_diff)
+    inv_hessian_approx = computeInvHessianApprox(inv_hessian_approx, beta_diff, gradient_diff)
     
     # update beta
-    direction = computeQuasiNewtonDirection(gradient, hessian_approx)
+    direction = computeQuasiNewtonDirection(gradient, inv_hessian_approx)
     prev_beta = beta
     stepsize = computeStepSize(beta, y, X, m, direction)
     beta = beta + stepsize * direction

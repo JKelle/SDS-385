@@ -19,7 +19,7 @@ setwd("~/Google Drive/University of Texas/SDS 385; Statistical Models for Big Da
 source("gradientDescent.R")
 source("newtonMethod.R")
 source("SGD.R")
-#source("quasiNewton.R")
+source("quasiNewton.R")
 
 
 ##################
@@ -60,7 +60,7 @@ list[nm_beta, nm_likelihoods] = newtonMethod(y, X, m, 10000, 1e-6)
 sgd_beta = stochasticGradientDescent(y, X, m, 4000, 1e-6)
 
 # qn = quasi-newton
-#qn_beta = quasiNewtonMethod(y, X, m, 10000, 1e-6)
+qn_beta = quasiNewtonMethod(y, X, m, 10000, 1e-6)
 
 #source("SGD.R")
 #stochasticGradientDescent(y, X, m, 4000, 1e-6)

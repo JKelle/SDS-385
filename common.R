@@ -94,6 +94,24 @@ computeHessianApprox <- function(B, s, y) {
   return(updated_B)
 }
 
+computeInvHessianApprox <- function(H, s, y) {
+  # Computes the BFGS approximation to Hessian matrix
+  # of the negative log likelihood function.
+  #
+  # Args:
+  #   H: the inverse hessian approximation at time step k
+  #     H is assumed to be symmetric and positive definite.
+  #   s: the difference between two successive values of x: (x_k+1 - x_k)
+  #   y: the difference between two successive values of the gradient
+  #
+  # Returns:
+  #   updated_H: the hessian approximation at time step k+1
+  p = 1 / as.numeric(t(y) %*% s)
+  I = diag(1, nrow(H))
+  updated_H = (I - p * s %*% t(y)) %*% H %*% (I - p * y %*% t(s)) + p * crossprod(t(s))
+  return(updated_H)
+}
+
 computeStepSize <- function(beta, y, X, m, direction) {
   # Computes an appropriate step size when doing gradient descent.
   # Implements the backtracking line search algorithm.
