@@ -39,7 +39,7 @@ gradientDescent <- function(y, X, m, max_iterations, convergence_threshold) {
   while ((prev_nll - cur_nll)/prev_nll > convergence_threshold && i <= max_iterations) {
     # update beta
     direction = -computeGradient(beta, y, X, m)
-    stepsize = computeStepSize(beta, y, X, m, direction)
+    stepsize = linesearch(beta, y, X, m, direction)
     beta = beta + stepsize * direction
     
     # get new negative log-likelihood

@@ -112,7 +112,7 @@ computeInvHessianApprox <- function(H, s, y) {
   return(updated_H)
 }
 
-computeStepSize <- function(beta, y, X, m, direction) {
+linesearch <- function(beta, y, X, m, direction) {
   # Computes an appropriate step size when doing gradient descent.
   # Implements the backtracking line search algorithm.
   #
@@ -137,6 +137,5 @@ computeStepSize <- function(beta, y, X, m, direction) {
     rhs = computeNll(beta, y, X, m) - c*stepsize*(t(direction) %*% direction)
   }
   
-  print(paste("step size =", stepsize))
   return(stepsize)
 }

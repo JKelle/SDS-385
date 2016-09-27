@@ -51,7 +51,7 @@ quasiNewtonMethod <- function(y, X, m, max_iterations, convergence_threshold) {
   prev_nll = cur_nll + convergence_threshold + 1
   gradient = matrix(1, ncol(X), 1)  # all ones
   prev_beta = beta + 0.1
-  inv_hessian_approx = solve(computeHessian(beta, X, m))
+  inv_hessian_approx = diag(0.001, ncol(X))
   
   print(paste("iteration #", i, "likelihood =", cur_nll))
   
@@ -66,7 +66,7 @@ quasiNewtonMethod <- function(y, X, m, max_iterations, convergence_threshold) {
     # update beta
     direction = computeQuasiNewtonDirection(gradient, inv_hessian_approx)
     prev_beta = beta
-    stepsize = computeStepSize(beta, y, X, m, direction)
+    stepsize = linesearch(beta, y, X, m, direction)
     beta = beta + stepsize * direction
     
     # get new log likelihood
@@ -78,8 +78,5 @@ quasiNewtonMethod <- function(y, X, m, max_iterations, convergence_threshold) {
     print(paste("iteration #", i, "likelihood =", cur_nll))
   }
   
-  plot(seq(i), likelihoods[1:i])
-  
-  return(beta)
-  #return(list(beta, likelihoods[1:i]))
+  return(list(beta=beta, likelihoods=likelihoods[1:i]))
 }

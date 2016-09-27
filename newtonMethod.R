@@ -55,7 +55,7 @@ newtonMethod <- function(y, X, m, max_iterations, convergence_threshold) {
   while ((prev_nll - cur_nll)/prev_nll > convergence_threshold && i <= max_iterations) {
     # update beta
     direction = computeNewtonDirection(beta, y, X, m)
-    beta = beta + stepsize * direction
+    beta = beta + direction
     
     # get new log likelihood
     prev_nll = cur_nll
