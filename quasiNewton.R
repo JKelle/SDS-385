@@ -7,20 +7,6 @@
 setwd("~/Google Drive/University of Texas/SDS 385; Statistical Models for Big Data/code")
 source("common.R")
 
-
-computeQuasiNewtonDirection <- function(gradient, inv_hessian_approx) {
-  # Computes descent direction by Newton's method.
-  #
-  # Args:
-  #   gradient: gradient of the negative log-likeihood function, wrt beta
-  #   hessian_approx: approximation to the Hessian of the neg log-likelihood
-  #
-  # Returns:
-  #   direction: the quasi-Newton direction
-  direction = -(inv_hessian_approx %*% gradient)
-  return(direction)
-}
-
 quasiNewtonMethod <- function(y, X, m, max_iterations, convergence_threshold) {
   # quasi-Newton's method - Like Newton's method, but uses an approximation
   #   to the Hessian instead of the exact Hessian.
@@ -64,7 +50,7 @@ quasiNewtonMethod <- function(y, X, m, max_iterations, convergence_threshold) {
     inv_hessian_approx = computeInvHessianApprox(inv_hessian_approx, beta_diff, gradient_diff)
     
     # update beta
-    direction = computeQuasiNewtonDirection(gradient, inv_hessian_approx)
+    direction = -(inv_hessian_approx %*% gradient)
     prev_beta = beta
     stepsize = linesearch(beta, y, X, m, direction)
     beta = beta + stepsize * direction
