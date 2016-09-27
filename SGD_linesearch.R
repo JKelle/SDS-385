@@ -1,22 +1,26 @@
 
 # Author: Josh Kelle
 
-# This script implements vanilla stochastic gradient descent (SGD) for
-# minimizing the objective function (negative log likelihood) of a logistic
-# regression model.
+# This script implements "mini-batch linesearch" variant of  stochastic
+# gradient descent (SGD) for minimizing the objective function (negative log
+# likelihood) of a logistic regression model.
 
-# import common math function
+# import common math functions
 setwd("~/Google Drive/University of Texas/SDS 385; Statistical Models for Big Data/code")
 source("common.R")
 
-SGD <- function(y, X, m, num_epochs) {
-  # Stochastic gradient descent with a fixed stepsize.
+SGD_linesearch <- function(y, X, m, num_epochs, mini_batch_size, linesearch_freq) {
+  # Stochastic gradient descent with linesearch to select step size.
+  # Line search is invoked on a mini batch of data points. The returned
+  # stepsize is used for 100 iterations before recomputing a new stepsize.
   #
   # Args:
   #   y: the vector of labels
   #   X: the feature matrix (each row is one data point)
   #   m: the vector of number of trials for each data point
   #   num_epochs: number of times the whole dataset is iterated through
+  #   mini_batch_size: number of data points used during line search
+  #   linesearch_freq: frequency with which a new stepsize is computed
   #
   # Returns:
   #   a list with the following elements
@@ -28,9 +32,6 @@ SGD <- function(y, X, m, num_epochs) {
   # initialize beta to be all 0
   beta = matrix(0, ncol(X))
   
-  # set fixed stepsize
-  stepsize = 0.01
-  
   # create vector to keep track negative log-likelihood values
   max_iterations = num_epochs * nrow(X)
   sample_likelihoods = vector(mode = "numeric", length = max_iterations + 1)
@@ -40,6 +41,16 @@ SGD <- function(y, X, m, num_epochs) {
   
   while (num_epochs > 0) {
     for (index in seq(nrow(X))) {
+      
+      # set stepsize for a minibatch every 100 iterations
+      if (i %% linesearch_freq == 0) {
+        indices = sample(1:nrow(X), mini_batch_size)
+        mini_batch_X = X[indices, ]
+        mini_batch_y = y[indices]
+        mini_batch_m = m[indices]
+        mini_batch_gradient = computeGradient(beta, mini_batch_y, mini_batch_X, mini_batch_m)
+        stepsize = linesearch(beta, mini_batch_y, mini_batch_X, mini_batch_m, -mini_batch_gradient)
+      }
       
       # sample a single data point
       single_y = y[index]

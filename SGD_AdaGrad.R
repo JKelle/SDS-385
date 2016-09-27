@@ -1,22 +1,23 @@
 
 # Author: Josh Kelle
 
-# This script implements vanilla stochastic gradient descent (SGD) for
-# minimizing the objective function (negative log likelihood) of a logistic
-# regression model.
+# This script implements AdaGrad variant of  stochastic gradient descent (SGD)
+# for minimizing the objective function (negative log likelihood) of a
+# logistic regression model.
 
 # import common math function
 setwd("~/Google Drive/University of Texas/SDS 385; Statistical Models for Big Data/code")
 source("common.R")
 
-SGD <- function(y, X, m, num_epochs) {
-  # Stochastic gradient descent with a fixed stepsize.
+SGD_AdaGrad <- function(y, X, m, num_epochs, learning_rate) {
+  # Stochastic gradient descent with AdaGrad.
   #
   # Args:
   #   y: the vector of labels
   #   X: the feature matrix (each row is one data point)
   #   m: the vector of number of trials for each data point
   #   num_epochs: number of times the whole dataset is iterated through
+  #   learning_rate: learning rate for AdaGrad algorithm
   #
   # Returns:
   #   a list with the following elements
@@ -28,9 +29,6 @@ SGD <- function(y, X, m, num_epochs) {
   # initialize beta to be all 0
   beta = matrix(0, ncol(X))
   
-  # set fixed stepsize
-  stepsize = 0.01
-  
   # create vector to keep track negative log-likelihood values
   max_iterations = num_epochs * nrow(X)
   sample_likelihoods = vector(mode = "numeric", length = max_iterations + 1)
@@ -38,9 +36,14 @@ SGD <- function(y, X, m, num_epochs) {
   full_likelihoods = vector(mode = "numeric", length = max_iterations + 1)
   i = 0
   
+  # initialize estimate of diagonal approx to Hessian
+  hessian_approx = matrix(0.001, ncol(X))
+  
+  # set 'fudge factor' that avoids dividing by zero
+  epsilon = 1e-8
+  
   while (num_epochs > 0) {
     for (index in seq(nrow(X))) {
-      
       # sample a single data point
       single_y = y[index]
       single_x = t(X[index, ])
@@ -48,7 +51,8 @@ SGD <- function(y, X, m, num_epochs) {
       
       # update beta
       gradient = computeGradient(beta, single_y, single_x, single_m)
-      beta = beta - stepsize * gradient
+      hessian_approx = hessian_approx + gradient ^ 2
+      beta = beta - learning_rate * gradient / sqrt(hessian_approx + epsilon)
       
       # get new negative log-likelihood
       i = i + 1
@@ -62,7 +66,7 @@ SGD <- function(y, X, m, num_epochs) {
         avg_likelihoods[[i]] <- 0.99 * avg_likelihoods[[i-1]] + 0.01 * sample_likelihoods[[i]]
       }
       
-      #print(paste("iteration #", i, "likelihood =", avg_likelihoods[[i]]))
+      print(paste("iteration #", i, "likelihood =", avg_likelihoods[[i]]))
     }
     
     num_epochs = num_epochs - 1
