@@ -1,0 +1,91 @@
+This feedback is divided into 3 sections: written work, exercise1, and exercise2.
+
+
+============
+Written work
+===========
+
+- When computing the gradient of the negative log likelihood, I would recommend making it clear that in the last line, the multiplication of the m vector with the w vector is an element-wise multiplication.
+
+
+===========
+exercise1.R
+===========
+
+Code Style
+----------
+- add white space before and after '=' when assigning values to variables.
+- add white space after commas (i.e forwardsolve(L, b))
+- add white space before and after math operators (i.e W %*% y)
+- for each function, provide comments that (1) briefly describe what the function does, (2) what each argument is, and (3) what it returns.
+
+Linear Regression (Part C)
+--------------------------
+- multiplying by the explicit diagonal W matrix is not efficient. It spends a lot of time multiplying by zeros. Instead, you can store only the diagonal elements of in a 1 dimensional vector.
+- Use the crossprod() function to compute symmetric matrices. For example, when doing a matrix multiplication of the form B = t(A) * A, it is more efficient to do B = crossprod(A). In this section of code, computing t(X)WX can be refactored into t(W^(1/2) * X) * (W^(1/2) * X), and so can be computed with crossprod(sqrt(W) * X).
+- I'm not really sure what the code in mymethod() is doing. I think it's more complicated that it needs to be.
+- When I change y to be a one-dimensional vector, mymethod() returns a single scalar. It should return a vector of length P.
+- Is mymethod2 supposed to be a less efficient version of mymethod()? You have code that looks like "solve(A)%*%b" when you can instead write "solve(A, b)". Providing both as arguments to solve will be more efficient. However, since you're using the Cholesky decomposition, it's best to use forwardsolve() and backsolve() like you do in mymethod().
+
+Linear Regression (Part D)
+--------------------------
+- I think y is supposed to be one dimensional
+- No need for y to be sparse. Only X should be sparse.
+
+Loading Data
+------------
+- When transforming y from a list of 'B's and 'M's, you can simply call the as.numeric() function. This will assign 'B' the value of 1 and 'M' the value of 2. You can then subtract 1 to get the 0 and 1 binary labels.
+
+	ya = as.character(wdbc[,2])
+	y = rep(0,length(ya))
+	y[which(ya=='M')] = 1
+	
+	vs
+	
+	y = matrix(as.numeric(wdbc[, 2]) - 1)
+
+- I think X should use columns 3:12, not 2:11.
+- I think there's a typo when defining the X matrix. It seems like 'data' should be replaced with 'wdbc'.
+
+descent() function
+------------------
+- I think it makes more sense to have mvec as a function parameter since it is in theory part of the data. In the particular example we used in the class, mvec happens to be all ones. But generally, mvec would be something we read from the data file.
+- I think beta0 doesn't need to be a parameter of descent() unless you want to explore how the function's behavior differs for different values of beta0.
+- What does "mob" stand for? The variable name is not clear.
+- When I run this function, I get a bunch of these warnings:
+	In gradient[ii - 1] = grad(y, X, w, mvec) :
+	number of items to replace is not a multiple of replacement length
+I don't think it's necessary to store every gradient. Each gradient is only used once, immediately after it's computed.
+- It seems like the logl variable is increasing. Shouldn't it be decreasing?
+
+grad() function
+---------------
+- I think -t(X)%*%(y-m*w) is slightly less efficient that t(X)%*%(m*w-y) because of the double negative. This is probably negligible, though.
+
+hessian() function
+------------------
+- Again, you can use crossprod() here to improve speed
+- Again, you can represent the diagonal as a one-dimensional vector instead of the explicit matrix.
+
+newton() function
+-----------------
+- I think there is a typo between B0 and beta0.
+- Again, I don't think it's necessary to have beta0 be an argument to this function.
+
+Organization
+------------
+- I recommend creating a function for computing the negative log likelihood. Additionally, this function can be vectorized instead of using the sum() function.
+
+
+===========
+exercise2.R
+===========
+
+- Nice job implementing three different versions of sgd and comparing them.
+- It's not immediately clear to me what the differences are between sgd, sgd2, and sgd3. A comment at the top of the file will help here.
+- I looks like this script doesn't load the data correctly. I'm testing it on my local wdbc.csv file, which I downloaded from James' GitHub and haven't modified. Is yours different?
+- Are you not assuming a binomial distribution anymore? I'm seeing normal distributions in the code. Is this why logliknorm() and gradnorm() are different from exercise1.R?
+- I think for sgd, the user typically specifies the number of epochs, not the raw number of iterations.
+- The graphs comparing converging vs beta0 are nice!
+- Nice job implementing Robbins-Monro and comparing different values of C. However, I don't see this code the R file.
+- When trying to compare sgd() with sgd3, it would be more appropriate to plot both curves on the same plot (in different colors, for example).
