@@ -33,6 +33,7 @@ SGD_AdaGrad <- function(y, X, m, num_epochs, learning_rate) {
   max_iterations = num_epochs * nrow(X)
   sample_likelihoods = vector(mode = "numeric", length = max_iterations + 1)
   avg_likelihoods = vector(mode = "numeric", length = max_iterations + 1)
+  full_likelihoods = vector(mode = "numeric", length = max_iterations + 1)
   i = 0
   
   # initialize estimate of diagonal approx to Hessian
@@ -71,5 +72,5 @@ SGD_AdaGrad <- function(y, X, m, num_epochs, learning_rate) {
     num_epochs = num_epochs - 1
   }
   
-  return(list(beta=beta, avg_likelihoods=avg_likelihoods[1:i], sample_likelihoods=sample_likelihoods[1:i]))
+  return(list(beta=beta, avg_likelihoods=avg_likelihoods[1:i], sample_likelihoods=sample_likelihoods[1:i], full_likelihoods=full_likelihoods[1:i]))
 }
