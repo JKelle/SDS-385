@@ -8,6 +8,24 @@ using Eigen::VectorXd;
 using Eigen::ArrayXd;
 using Eigen::MappedSparseMatrix;
 
+/*
+ * Fast inverse square root approximation.
+ * Copy/Pasted from Wikipedia:
+ *   https://en.wikipedia.org/wiki/Fast_inverse_square_root
+ */
+union cast_double{ uint64_t asLong; double asDouble; };
+static inline double invSqrt( const double& x )
+{ //Stolen from physicsforums
+  cast_double caster;
+  caster.asDouble = x;
+  double xhalf = ( double )0.5 * caster.asDouble;
+  caster.asLong = 0x5fe6ec85e7de30daLL - ( caster.asLong >> 1 );
+  double y = caster.asDouble;
+  y = y * ( ( double )1.5 - xhalf * y * y );
+  y = y * ( ( double )1.5 - xhalf * y * y ); //For better accuracy
+
+  return y;
+}
 
 /**
  * Computes the negative log likelihood of beta given X, y, and m, (minus some
@@ -57,10 +75,8 @@ ArrayXd computeGradient_cpp(
 }
 
 /**
- *
- * gradient = computeGradient_cpp(beta, single_y, single_x, single_m)
- * hessian_approx = hessian_approx + gradient ^ 2
- * beta = beta - learning_rate * gradient / sqrt(hessian_approx + epsilon)
+ * AdaGrad update for SGD.
+ * Returns both the updated beta vector and the updated hessian_approx vector.
  */
 // [[Rcpp::export]]
 Rcpp::List AdaGradUpdate_cpp(
@@ -72,7 +88,7 @@ Rcpp::List AdaGradUpdate_cpp(
 		double learning_rate) {
 	ArrayXd gradient = computeGradient_cpp(beta, single_y, single_X, single_m);
 	ArrayXd updated_hessian = hessian_approx + gradient.square();
-	ArrayXd updated_beta = beta.array() - learning_rate * gradient / sqrt(updated_hessian + 1e-8);
+	ArrayXd updated_beta = beta.array() - learning_rate * gradient / (updated_hessian + 1e-8).sqrt();
 
 	return Rcpp::List::create(
 		Rcpp::Named("hessian_approx") = updated_hessian,
