@@ -8,8 +8,9 @@
 # import common math function
 setwd("~/Google Drive/University of Texas/SDS 385; Statistical Models for Big Data/code")
 source("common.R")
+sourceCpp(file='common.cpp')
 
-SGD_AdaGrad <- function(y, X, m, num_epochs, learning_rate) {
+SGD_AdaGrad_cpp <- function(y, X, m, num_epochs, learning_rate) {
   # Stochastic gradient descent with AdaGrad.
   #
   # Args:
@@ -45,18 +46,17 @@ SGD_AdaGrad <- function(y, X, m, num_epochs, learning_rate) {
     for (index in seq(nrow(X))) {
       # sample a single data point
       single_y = y[index]
-      single_x = t(X[index, ])
+      single_x = Matrix(t(X[index, ]), sparse=TRUE)
       single_m = m[index]
       
       # update beta
-      result = AdaGradUpdate(beta, single_y, single_x, single_m, hessian_approx, learning_rate)
+      result = AdaGradUpdate_cpp(beta, single_y, single_x, single_m, hessian_approx, learning_rate)
       hessian_approx = result$hessian_approx
       beta = result$beta
       
       # get new negative log-likelihood
       i = i + 1
-      sample_likelihoods[[i]] <- computeNll(beta, single_y, single_x, single_m)
-      full_likelihoods[[i]] <- computeNll(beta, y, X, m)
+      sample_likelihoods[[i]] <- computeNll_cpp(beta, single_y, single_x, single_m)
       
       # update exponentially weighted moving average
       if (i == 1) {
@@ -71,5 +71,5 @@ SGD_AdaGrad <- function(y, X, m, num_epochs, learning_rate) {
     num_epochs = num_epochs - 1
   }
   
-  return(list(beta=beta, avg_likelihoods=avg_likelihoods[1:i], sample_likelihoods=sample_likelihoods[1:i]))
+  return(list(beta=beta, sample_likelihoods=sample_likelihoods[1:i], avg_likelihoods=avg_likelihoods[1:i]))
 }

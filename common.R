@@ -139,3 +139,10 @@ linesearch <- function(beta, y, X, m, direction) {
   
   return(stepsize)
 }
+
+AdaGradUpdate <- function(beta, single_y, single_x, single_m, hessian_approx, learning_rate) {
+  gradient = computeGradient(beta, single_y, single_x, single_m)
+  hessian_approx = hessian_approx + gradient ^ 2
+  beta = beta - learning_rate * gradient / sqrt(hessian_approx + 1e-8)
+  return(list(beta=beta, hessian_approx=hessian_approx))
+}
