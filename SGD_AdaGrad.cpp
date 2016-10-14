@@ -2,6 +2,7 @@
 #include <RcppEigen.h>
 // [[Rcpp::depends(RcppEigen)]]
 #include <cmath>
+#include <ctime>
 
 using Eigen::Map;
 using Eigen::MatrixXd;
@@ -82,7 +83,17 @@ double computeNll_single_cpp(
 		xBeta += it.value() * beta(it.index());
 	}
 
-	double right = single_m * std::log(1 + std::exp(-xBeta));
+	// small xBeta (large negative) leads to overflow, ie. exp(-xBeta) -> inf
+	// So I make this approximation: log(1 + exp(-xBeta)) -> -xBeta
+	double right;
+	if (xBeta > -20) {
+		// true value
+		right = single_m * std::log(1 + std::exp(-xBeta));
+	} else {
+		// approximation
+		right = - single_m * xBeta;
+	}
+
 	double left = (single_m - single_y) * xBeta;
 	double nll = left + right;
 
@@ -105,7 +116,6 @@ SparseMatrix<double> computeGradient_cpp(
 		const SparseMatrix<double, RowMajor>& X,
 		const double single_m,
 		const int index) {
-
 	double exponent = 0;
 	int nnz = 0;
 	for (SparseMatrix<double, RowMajor>::InnerIterator it(X, index); it; ++it) {
@@ -149,6 +159,34 @@ void AdaGradUpdate_cpp(
 }
 
 /**
+ * Computes the inverse l2 norm of each feature.
+ * There's a bug in here somewhere. Don't use yet.
+ */
+void computeScale(const MappedSparseMatrix<double>& X, VectorXd& invMags) {
+	for (int col = 0; col < X.cols(); col++) {
+		// compute magnitude (l2 norm)
+		double sumOfSq = 0;
+		for (SparseMatrix<double, RowMajor>::InnerIterator it(X, col); it; ++it) {
+			sumOfSq += std::pow(it.value(), 2);
+		}
+		// std::cout << "col = " << col << " sumOfSq = " << sumOfSq << std::endl;
+		invMags(col) = invSqrt(sumOfSq);
+	}
+}
+
+void applyScale(SparseMatrix<double, RowMajor>& X, VectorXd& invMags) {
+	for (int col = 0; col < X.cols(); col++) {
+		// divide by magnitude (multiply by inverse of magnitude)
+		std::cout << "inv mag = " << invMags(col);
+		for (SparseMatrix<double, RowMajor>::InnerIterator it(X, col); it; ++it) {
+			std::cout << "before " << it.value();
+			X.coeffRef(it.index(), col) *= invMags(col);
+			std::cout << "after " << it.value();
+		}
+	}
+}
+
+/**
  * Stochastic gradient descent with AdaGrad.
  *
  * Args:
@@ -168,13 +206,22 @@ void AdaGradUpdate_cpp(
  // [[Rcpp::export]]
 Rcpp::List SGD_AdaGrad_cpp(
 		const Map<VectorXd> y,
-		const MappedSparseMatrix<double> X_bycol,
+		const MappedSparseMatrix<double> X_colmajor,
 		const Map<VectorXd> m,
 		int num_epochs,
 		double learning_rate) {
+	std::cout << "entering SGD_AdaGrad_cpp" << std::endl;
+
+	// scale features to have unit l2 norm
+	// VectorXd inv_feature_magnitudes = VectorXd::Zero(X_colmajor.cols());
+	// computeScale(X_colmajor, inv_feature_magnitudes);
 
 	// convert to RowMajor
-	const SparseMatrix<double, RowMajor> X(X_bycol);
+	std::cout << "\tconverting to RowMajor" << std::endl;
+	SparseMatrix<double, RowMajor> X(X_colmajor);
+	std::cout << "X has " << X.rows() << " rows, " << X.cols() << " cols" << std::endl;
+
+	// applyScale(X, inv_feature_magnitudes);
 
 	// initialize beta to be all 0
 	VectorXd beta = VectorXd::Zero(X.cols());
@@ -186,35 +233,48 @@ Rcpp::List SGD_AdaGrad_cpp(
 	}
 
 	// create vector to keep track negative log-likelihood values
-	VectorXd sample_likelihoods = VectorXd::Zero(num_epochs * X.rows() + 1);
-	VectorXd avg_likelihoods = VectorXd::Zero(num_epochs * X.rows() + 1);
-	VectorXd full_likelihoods = VectorXd::Zero(num_epochs * X.rows() + 1);
-	int i = 0;
+	// VectorXd sample_likelihoods = VectorXd::Zero(num_epochs * X.rows() + 1);
+	// VectorXd avg_likelihoods = VectorXd::Zero(num_epochs * X.rows() + 1);
+	// VectorXd full_likelihoods = VectorXd::Zero(num_epochs * X.rows() + 1);
+	// int i = 0;
 
 	while (num_epochs-- > 0) {
+
+		std::cout << "\tbeginning epoch" << std::endl;
+		std::clock_t begin = std::clock();
+
 		for (int index = 0; index < X.rows(); index++) {
-		// for (int index = 0; index < 2; index++) {
+		// for (int index = 0; index < 100000; index++) {
+
 			// update beta and hessian_approx in place
 			AdaGradUpdate_cpp(beta, y, X, m, hessian_approx, learning_rate, index);
 
 			// get new negative log-likelihood
-			sample_likelihoods(i) = computeNll_single_cpp(beta, y, X, m, index);
-			full_likelihoods(i) = computeNll_cpp(beta, y, X, m);
+			// sample_likelihoods(i) = computeNll_single_cpp(beta, y, X, m, index);
+			// full_likelihoods(i) = computeNll_cpp(beta, y, X, m);
 
 			// update exponentially weighted moving average
-			if (i == 0) {
-				avg_likelihoods(i) = sample_likelihoods(i);
-			} else {
-				avg_likelihoods(i) = 0.99 * avg_likelihoods(i-1) + 0.01 * sample_likelihoods(i);
-			}
-			i++;
+			// std::cout << "\t\tupdating running avg" << std::endl;
+			// if (i == 0) {
+			// 	avg_likelihoods(i) = sample_likelihoods(i);
+			// } else {
+			// 	avg_likelihoods(i) = 0.99 * avg_likelihoods(i-1) + 0.01 * sample_likelihoods(i);
+			// }
+			// if (i % 10 == 0) {
+			// 	std::cout << i << " " << sample_likelihoods(i) << " " << avg_likelihoods(i) << std::endl;
+			// }
+			// i++;
 		}
+
+		std::clock_t end = std::clock();
+		double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+		std::cout << "epoch: " << elapsed_secs << std::endl;
 	}
 
 	return Rcpp::List::create(
-		Rcpp::Named("beta") = beta,
-		Rcpp::Named("sample_likelihoods") = sample_likelihoods,
-		Rcpp::Named("full_likelihoods") = full_likelihoods,
-		Rcpp::Named("avg_likelihoods") = avg_likelihoods
+		Rcpp::Named("beta") = beta
+		// Rcpp::Named("sample_likelihoods") = sample_likelihoods,
+		// Rcpp::Named("full_likelihoods") = full_likelihoods,
+		// Rcpp::Named("avg_likelihoods") = avg_likelihoods
 	);
 }
