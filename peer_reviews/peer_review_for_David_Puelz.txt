@@ -1,0 +1,38 @@
+Peer Review 10/27/16
+====================
+
+This is the peer review for David Puelz's assignment 4, fast stochastic gradient descent. The reviewer is Josh Kelle.
+
+### bigdatascript.R
+
+* I tried to run your code, but I ran into two problems. One was installing the wordspace library. The other is that I get "Error: no such slot" when I try to call the davesgdCV() c++ function. So my analysis is just from reading the code, not running it.
+
+* I have a couple comments regarding the cross validation. I'm referring to the code block with the comment header 'running individual lambdas'. 
+
+1. I like that lamseq is curved so that lambda values get farther apart as they increase in value.
+
+2. This sequence looks pretty fine-grained, especially near the smaller values of lambda. That is, the difference between adjacent lambda values if very small. There's nothing wrong with this (other than potentially wasting time overfitting). It might just take a long time to run. If so, it might be a good idea to do cross validation with a more coarse sequence first to narrow the search down to a smaller region of lambda values, then do a more fine-grained sequence over a smaller range.
+
+3. The range stops at lambda = 1. Maybe that's ok for this particular dataset, but I think it's too small in general. I would normally try some coarse sequence like "10^seq(-10, 5)" to first find a range of appropriate lambdas. This might be too coarse, but you get the idea.
+
+* It's cool that you compute sensitivity, specificity, and classification rate for each value of lambda. A similar set of statistics one might be interested in are "precision" and "recall", which are related to sensitivity and specificity, but are defined slightly differently.
+
+* Dependencies: I think it's good style/practice to place all source() calls near the top of the R file. Just below all the library() calls. This also makes it easier for someone else to run your code if all the dependencies can be seen in one place. Additionally, it would be nice to have a README that lists all dependencies, although this may be overkill for a project this small.
+
+* I had some trouble installing the wordspace library. I'm not 100% sure why it's being used in this project. I'm guessing it's used in scaling the X matrix since my R session can't find the functions colNorms() and scaleMargins(). But that's just a hunch.
+
+* There are large chunks of code commented out. This makes the code harder to read and understand. If you want to keep this code around but don't want it to run, I suggest putting it in functions. Maybe even in different files if they're one-off experiments.
+
+* Having a plot of classrate, specificity, and sensitivity is nice. The shape of the curves is interesting, though. The curve suggests classification gets better as lambda gets smaller. I usually expect a u-shaped curve, where extremely small and extremely large lambdas have bad accuracy, and lambdas in the middle have good accuracy. Maybe lambda=1e-10 is even too big?
+
+### bigdatafunctions.cpp
+
+* I suggest adding a large comment at the beginning of the function that details each argument and returned variable.
+
+* consistent spacing - I notice that sometimes there are spaces between operators but sometimes not. I think it's good practice keep it consistent. And adding space between operators makes the code more readable in my opinion.
+
+* good inline comments
+
+### bigdatafunctions.R
+
+* This file looks pretty straightforward. My only suggestions here are to add a function comment header to CVfit that describe inputs and outputs, to add spaces after commas, and move 'require' calls to the top of the file.
