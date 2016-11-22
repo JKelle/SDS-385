@@ -62,11 +62,16 @@ for (i in seq(length(model$lambda), 1)) {
 plot(model$lambda, mse, log='x')
 
 # Cp statistic
+# this plot has the same overall shape as the cross validation curve, but it's more bumpy
 
-mse = rep(0, length(model$lambda))
+cp = rep(0, length(model$lambda))
 for (i in seq(length(model$lambda), 1)) {
   beta = as.matrix(model$beta[, i])
-  mse = sum((y - X %*% beta) ^ 2) / n
-  
+  y_hat = X %*% beta
+  residuals = y_hat - y
+  mse = sum(residuals ^ 2) / n
+  penalty = 2 * nnzero(beta) * var(residuals) / n
+  cp[i] = mse + penalty
 }
-plot(model$lambda, mse, log='x')
+plot(model$lambda, cp, log='x')
+
